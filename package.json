@@ -36,6 +36,7 @@
   ],
   "dependencies": {
     "colorsys": "^1.0.10",
+    "react-native-udp": "^2.0.0",
     "yargs": "^6.6.0"
   },
   "babel": {

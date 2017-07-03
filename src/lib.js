@@ -1,4 +1,4 @@
-import dgram from 'dgram'
+import dgram from 'react-native-udp'
 import EventEmitter from 'events'
 
 module.exports = class Bulb {

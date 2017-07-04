@@ -2,16 +2,6 @@
   "name": "react-native-tplink-bulb",
   "version": "1.1.6",
   "description": "Control TP-Link smart lightbulbs from nodejs",
-  "main": "build/lib.js",
-  "scripts": {
-    "release": "npm run build && npm version patch -m 'Bumped to %s.' && npm publish",
-    "postversion": "git push && git push --tags",
-    "build": "babel src/lib.js > build/lib.js && babel src/cli.js > build/cli.js",
-    "doc": "jsdoc2md src/lib.js"
-  },
-  "bin": {
-    "tplight": "build/cli.js"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/konsumer/tplink-lightbulb.git"
@@ -38,11 +28,5 @@
     "colorsys": "^1.0.10",
     "react-native-udp": "^2.0.0",
     "yargs": "^6.6.0"
-  },
-  "babel": {
-    "presets": [
-      "latest",
-      "stage-2"
-    ]
   }
 }

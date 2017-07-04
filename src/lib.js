@@ -31,7 +31,7 @@ const scan = Bulb.scan()
       reuseAddr: true
     })
     client.bind(9998, undefined, () => {
-      client.setBroadcast(true)
+    //  client.setBroadcast(true) // TODO: Check this in iOS
       const msgBuf = Bulb.encrypt(Buffer.from('{"system":{"get_sysinfo":{}}}'))
       client.send(msgBuf, 0, msgBuf.length, 9999, '255.255.255.255')
     })

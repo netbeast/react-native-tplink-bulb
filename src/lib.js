@@ -98,24 +98,29 @@ light.send({
 .catch(e => console.error(e))
 ```
    */
-  send (msg) {
-    return new Promise((resolve, reject) => {
-      if (!this.ip) {
-        return reject(new Error('IP not set.'))
-      }
-      const client = dgram.createSocket('udp4')
-      const message = this.encrypt(Buffer.from(JSON.stringify(msg)))
-      client.send(message, 0, message.length, 9999, this.ip, (err, bytes) => {
-        if (err) {
-          return reject(err)
-        }
-        client.on('message', msg => {
-          resolve(JSON.parse(this.decrypt(msg).toString()))
-          client.close()
-        })
-      })
-    })
-  }
+   send (msg) {
+     return new Promise((resolve, reject) => {
+       if (!this.ip) {
+         return reject(new Error('IP not set.'))
+       }
+       const client = dgram.createSocket('udp4')
+       const message = this.encrypt(Buffer.from(JSON.stringify(msg)))
+       setTimeout(() => {
+         client.close()
+         return reject(new Error('TP-Link Bulb connection timeout'))
+       }, 2000)
+       client.send(message, 0, message.length, 9999, this.ip, (err, bytes) => {
+         if (err) {
+           client.close()
+           return reject(err)
+         }
+         client.on('message', msg => {
+           resolve(JSON.parse(this.decrypt(msg).toString()))
+           client.close()
+         })
+       })
+     })
+   }
 
   /**
    * Change state of lightbulb

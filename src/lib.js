@@ -2,8 +2,9 @@ import dgram from 'react-native-udp'
 import EventEmitter from 'events'
 
 module.exports = class Bulb {
-  constructor (ip) {
+  constructor ({ip, timeout}) {
     this.ip = ip
+    this.timeout = timeout || 3500
   }
 
   /**
@@ -108,7 +109,7 @@ light.send({
        setTimeout(() => {
          client.close()
          return reject(new Error('TP-Link Bulb connection timeout'))
-       }, 2000)
+       }, this.timeout)
        client.send(message, 0, message.length, 9999, this.ip, (err, bytes) => {
          if (err) {
            client.close()

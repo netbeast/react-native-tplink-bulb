@@ -5,6 +5,8 @@ module.exports = class Bulb {
   constructor ({ip, timeout}) {
     this.ip = ip
     this.timeout = timeout || 3500
+    this.socket = dgram.createSocket('udp4')
+    this.isSocketBound = false
   }
 
   /**
@@ -24,41 +26,6 @@ const scan = Bulb.scan()
       })
   })
 ```
-   */
-  static scan (filter) {
-    const emitter = new EventEmitter()
-    const client = dgram.createSocket({
-      type: 'udp4',
-      reuseAddr: true
-    })
-    client.bind(9998, undefined, () => {
-    //  client.setBroadcast(true) // TODO: Check this in iOS
-      const msgBuf = Bulb.encrypt(Buffer.from('{"system":{"get_sysinfo":{}}}'))
-      client.send(msgBuf, 0, msgBuf.length, 9999, '255.255.255.255')
-    })
-    client.on('message', (msg, rinfo) => {
-      const decryptedMsg = this.decrypt(msg).toString('ascii')
-      const jsonMsg = JSON.parse(decryptedMsg)
-      const sysinfo = jsonMsg.system.get_sysinfo
-
-      if (filter && sysinfo.mic_type !== filter) {
-        return
-      }
-
-      const light = new Bulb(rinfo.address)
-      light._info = rinfo
-      light._sysinfo = sysinfo
-      light.host = rinfo.address
-      light.port = rinfo.port
-      light.name = sysinfo.alias
-      light.deviceId = sysinfo.deviceId
-
-      emitter.emit('light', light)
-    })
-    emitter.stop = () => client.close()
-    return emitter
-  }
-
   /**
    * Get info about the Bulb
    * @module info
@@ -76,6 +43,14 @@ light.info()
   info () {
     return this.send({system: {get_sysinfo: {}}})
       .then(info => info.system.get_sysinfo)
+  }
+
+  destroy () {
+    if (this.isSocketBound) {
+      console.log('Destroying socket')
+      this.isSocketBound = false
+      this.socket.close()
+    }
   }
 
   /**
@@ -104,20 +79,23 @@ light.send({
        if (!this.ip) {
          return reject(new Error('IP not set.'))
        }
-       const client = dgram.createSocket('udp4')
-       const message = this.encrypt(Buffer.from(JSON.stringify(msg)))
-       setTimeout(() => {
-         client.close()
-         return reject(new Error('TP-Link Bulb connection timeout'))
-       }, this.timeout)
-       client.send(message, 0, message.length, 9999, this.ip, (err, bytes) => {
-         if (err) {
-           client.close()
-           return reject(err)
-         }
-         client.on('message', msg => {
-           resolve(JSON.parse(this.decrypt(msg).toString()))
-           client.close()
+       if (this.isSocketBound) return
+       this.socket.bind(undefined, undefined, () => {
+         this.isSocketBound = true
+         const message = this.encrypt(Buffer.from(JSON.stringify(msg)))
+         setTimeout(() => {
+           this.destroy()
+           return reject(new Error('TP-Link Bulb connection timeout'))
+         }, this.timeout)
+         this.socket.send(message, 0, message.length, 9999, this.ip, (err, bytes) => {
+           if (err) {
+             this.destroy()
+             return reject(err)
+           }
+           this.socket.on('message', msg => {
+             this.destroy()
+             resolve(JSON.parse(this.decrypt(msg).toString()))
+           })
          })
        })
      })
